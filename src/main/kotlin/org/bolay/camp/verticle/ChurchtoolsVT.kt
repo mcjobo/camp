@@ -2,7 +2,6 @@ package org.bolay.camp.verticle
 
 import io.vertx.core.Vertx
 import io.vertx.ext.web.client.WebClient.create
-
 import io.vertx.ext.web.client.WebClientSession
 import io.vertx.kotlin.coroutines.CoroutineVerticle
 import io.vertx.kotlin.coroutines.dispatcher
@@ -46,17 +45,20 @@ class ChurchtoolsVT : CoroutineVerticle() {
     }
 
     suspend fun login(username: String, password: String): String {
-        var responseLogin = session.post("api/login")
+        var responseLogin = session.post("/api/login")
                 .putHeader("content-type", "application/json")
                 .addQueryParam("username", username)
                 .addQueryParam("password", password)
                 .sendAwait()
-        println(responseLogin)
+        var res = responseLogin.body().toJsonObject()
+        println(responseLogin.body().toJson())
+        var personId = res.getJsonObject("data").getInteger("personId")
+        var uri = "/api/persons/" + personId + "/logintoken"
 
-//        var responseToken = session.get("api/persons/2/logintoken")
-//                .putHeader("content-type", "application/json")
-//                .sendAwait()
-//        println(responseToken)
-        return ""
+        var responseToken = session.get(uri)
+                .putHeader("content-type", "application/json")
+                .sendAwait()
+        println(responseToken)
+        return responseToken.body().toJsonObject().getString("data")
     }
 }
