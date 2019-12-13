@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: io.vertx:vertx-web-client:3.8.4">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.vertx/vertx-web-client/3.8.4/d913a0dcf5566babb23fec244069d134436310c3/vertx-web-client-3.8.4.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.vertx/vertx-web-client/3.8.4/d8046e2594e95226ca840d3a8847e7b3fbda6fc0/vertx-web-client-3.8.4-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
