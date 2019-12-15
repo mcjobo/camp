@@ -31,6 +31,15 @@ class ChurchtoolsVT : CoroutineVerticle() {
             }
         }
 
+        vertx.eventBus().consumer<String>("org.bolay.camp.cdbGetMasterData") { message ->
+            println("received getMasterData Message")
+            GlobalScope.launch(vertx.dispatcher()) {
+                login("***", "***")
+                val cdbMasterData = cdbGetMasterData()
+                message.reply(cdbMasterData)
+            }
+        }
+
     }
 
     suspend fun handleGetGroups(): String {
@@ -60,5 +69,15 @@ class ChurchtoolsVT : CoroutineVerticle() {
                 .sendAwait()
         println(responseToken)
         return responseToken.body().toJsonObject().getString("data")
+    }
+
+    suspend fun cdbGetMasterData(): String {
+        var response = client.post("/index.php?q=churchdb/ajax")
+                .putHeader("content-type", "application/x-www-form-urlencoded")
+                .putHeader("Accept", "application/json")
+                .addQueryParam("func", "getMasterData")
+                .sendAwait()
+        println(response.body().toString())
+        return response.body().toString()
     }
 }

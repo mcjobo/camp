@@ -27,6 +27,12 @@ class RestVerticle : CoroutineVerticle() {
 
             }
         }
+        router.route("/api/v1/getMasterData").handler { routingContext ->
+            GlobalScope.launch(vertx.dispatcher()) {
+                val cdbMasterData = cdbGetMasterData()
+                routingContext.response().putHeader("content-type", "text/html").end(cdbMasterData)
+            }
+        }
 
         server.requestHandler(router).listen(8080)
     }
@@ -37,9 +43,12 @@ class RestVerticle : CoroutineVerticle() {
     }
 
     suspend fun getGroups(): String {
-
         var reply = vertx.eventBus().requestAwait<String>("getGroups", "hallo")
         return reply.body()
+    }
 
+    suspend fun cdbGetMasterData(): String {
+        var reply = vertx.eventBus().requestAwait<String>("org.bolay.camp.cdbGetMasterData", "")
+        return reply.body()
     }
 }
