@@ -9,21 +9,27 @@ import com.itextpdf.layout.element.Paragraph
 import com.itextpdf.layout.element.Table
 import com.itextpdf.layout.property.UnitValue
 import io.vertx.kotlin.coroutines.CoroutineVerticle
+import io.vertx.kotlin.coroutines.dispatcher
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 
 class ITextWorkerVerticle : CoroutineVerticle() {
     override suspend fun start() {
         super.start()
 
-        val writer = PdfWriter("camp.pdf")
-        val pdf = PdfDocument(writer)
-        val document = Document(pdf)
-        document.add(Paragraph("Hello World!"))
-        document.close()
+        vertx.eventBus().consumer<String>("org.bolay.camp.createPdfTable") { message ->
+            println("received getGroups Message")
+            GlobalScope.launch(vertx.dispatcher()) {
+                createPdfTable()
+                message.reply("webroot/listen/camp.pdf")
+            }
+        }
+
     }
 
     suspend fun createPdfTable() {
-        val writer = PdfWriter("camp.pdf")
+        val writer = PdfWriter("webroot/listen/camp.pdf")
         val pdf = PdfDocument(writer)
         val document = Document(pdf)
 

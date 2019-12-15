@@ -1,6 +1,7 @@
 package org.bolay.camp.verticle
 
 import io.vertx.ext.web.Router
+import io.vertx.ext.web.handler.StaticHandler
 import io.vertx.kotlin.core.eventbus.requestAwait
 import io.vertx.kotlin.coroutines.CoroutineVerticle
 import io.vertx.kotlin.coroutines.dispatcher
@@ -16,21 +17,30 @@ class RestVerticle : CoroutineVerticle() {
         var server = vertx.createHttpServer()
         val router = Router.router(vertx)
 
+
+        router.route("/static/*").handler(StaticHandler.create())
         // Bind "/" to our hello message - so we are still compatible.
         router.route("/").handler { routingContext ->
-            routingContext.response().putHeader("content-type", "text/html").end(rootHandler())
+            routingContext.response().putHeader("content-type", "application/json").end(rootHandler())
         }
         router.route("/api/v1/getGroups").handler { routingContext ->
             GlobalScope.launch(vertx.dispatcher()) {
                 var groups = getGroups()
-                routingContext.response().putHeader("content-type", "text/html").end(groups)
+                routingContext.response().putHeader("content-type", "application/json").end(groups)
 
             }
         }
         router.route("/api/v1/getMasterData").handler { routingContext ->
             GlobalScope.launch(vertx.dispatcher()) {
                 val cdbMasterData = cdbGetMasterData()
-                routingContext.response().putHeader("content-type", "text/html").end(cdbMasterData)
+                routingContext.response().putHeader("content-type", "application/json").end(cdbMasterData)
+            }
+        }
+        router.route("/api/v1/createPdfTable").handler { routingContext ->
+            GlobalScope.launch(vertx.dispatcher()) {
+
+                val redirectUrl = createPdfTable()
+                routingContext.response().setStatusCode(303).putHeader("Location", redirectUrl).end(redirectUrl)
             }
         }
 
@@ -49,6 +59,11 @@ class RestVerticle : CoroutineVerticle() {
 
     suspend fun cdbGetMasterData(): String {
         var reply = vertx.eventBus().requestAwait<String>("org.bolay.camp.cdbGetMasterData", "")
+        return reply.body()
+    }
+
+    suspend fun createPdfTable(): String {
+        var reply = vertx.eventBus().requestAwait<String>("org.bolay.camp.createPdfTable", "")
         return reply.body()
     }
 }

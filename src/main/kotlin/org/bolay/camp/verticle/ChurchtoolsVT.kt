@@ -40,6 +40,15 @@ class ChurchtoolsVT : CoroutineVerticle() {
             }
         }
 
+        vertx.eventBus().consumer<String>("org.bolay.camp.cdbGetUsersOfGroup") { message ->
+            println("received getUsersrOfGroup Message")
+            GlobalScope.launch(vertx.dispatcher()) {
+
+                val usersOfGroup = getUsersOfGroup(login("***", "***"), 129)
+                message.reply(usersOfGroup)
+            }
+        }
+
     }
 
     suspend fun handleGetGroups(): String {
@@ -72,10 +81,20 @@ class ChurchtoolsVT : CoroutineVerticle() {
     }
 
     suspend fun cdbGetMasterData(): String {
-        var response = client.post("/index.php?q=churchdb/ajax")
+        var response = session.post("/index.php?q=churchdb/ajax")
                 .putHeader("content-type", "application/x-www-form-urlencoded")
                 .putHeader("Accept", "application/json")
                 .addQueryParam("func", "getMasterData")
+                .sendAwait()
+        println(response.body().toString())
+        return response.body().toString()
+    }
+
+    suspend fun getUsersOfGroup(pToken: String, pGroupId: Int): String {
+        var response = client.get("/api/groups")
+                .putHeader("content-type", "application/json")
+                .addQueryParam("login_token", "***")
+                .addQueryParam("limit", "100")
                 .sendAwait()
         println(response.body().toString())
         return response.body().toString()
