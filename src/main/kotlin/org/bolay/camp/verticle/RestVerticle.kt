@@ -1,5 +1,6 @@
 package org.bolay.camp.verticle
 
+import io.vertx.core.http.HttpHeaders
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.handler.StaticHandler
 import io.vertx.kotlin.core.eventbus.requestAwait
@@ -17,17 +18,21 @@ class RestVerticle : CoroutineVerticle() {
         var server = vertx.createHttpServer()
         val router = Router.router(vertx)
 
-
-        router.route("/static/*").handler(StaticHandler.create())
-        // Bind "/" to our hello message - so we are still compatible.
         router.route("/").handler { routingContext ->
             routingContext.response().putHeader("content-type", "application/json").end(rootHandler())
+        }
+        router.route("/static/*").handler(StaticHandler.create())
+        // Bind "/" to our hello message - so we are still compatible.
+        router.route("/listen/camp.pdf").handler { routingContext ->
+            routingContext.response()
+                    .putHeader(HttpHeaders.CONTENT_TYPE, "application/pdf")
+                    .putHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment")
+                    .sendFile("webroot/listen/camp.pdf")
         }
         router.route("/api/v1/getGroups").handler { routingContext ->
             GlobalScope.launch(vertx.dispatcher()) {
                 var groups = getGroups()
                 routingContext.response().putHeader("content-type", "application/json").end(groups)
-
             }
         }
         router.route("/api/v1/getMasterData").handler { routingContext ->
@@ -38,7 +43,6 @@ class RestVerticle : CoroutineVerticle() {
         }
         router.route("/api/v1/createPdfTable").handler { routingContext ->
             GlobalScope.launch(vertx.dispatcher()) {
-
                 val redirectUrl = createPdfTable()
                 routingContext.response().setStatusCode(303).putHeader("Location", redirectUrl).end(redirectUrl)
             }

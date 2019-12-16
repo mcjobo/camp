@@ -22,7 +22,7 @@ class ITextWorkerVerticle : CoroutineVerticle() {
             println("received getGroups Message")
             GlobalScope.launch(vertx.dispatcher()) {
                 createPdfTable()
-                message.reply("webroot/listen/camp.pdf")
+                message.reply("/listen/camp.pdf")
             }
         }
 
