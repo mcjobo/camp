@@ -19,7 +19,7 @@ class RestVerticle : CoroutineVerticle() {
         val router = Router.router(vertx)
 
         router.route("/").handler { routingContext ->
-            routingContext.response().putHeader("content-type", "application/json").end(rootHandler())
+            routingContext.response().putHeader(HttpHeaders.CONTENT_TYPE, "application/json").end(rootHandler())
         }
         router.route("/static/*").handler(StaticHandler.create())
         // Bind "/" to our hello message - so we are still compatible.
@@ -47,6 +47,13 @@ class RestVerticle : CoroutineVerticle() {
                 routingContext.response().setStatusCode(303).putHeader("Location", redirectUrl).end(redirectUrl)
             }
         }
+        router.route("/api/v1/createPersonTable").handler { routingContext ->
+            GlobalScope.launch(vertx.dispatcher()) {
+                val personTable = createPersonTable()
+                routingContext.response().putHeader("content-type", "application/json").end(personTable)
+            }
+        }
+
 
         server.requestHandler(router).listen(8080)
     }
@@ -69,5 +76,11 @@ class RestVerticle : CoroutineVerticle() {
     suspend fun createPdfTable(): String {
         var reply = vertx.eventBus().requestAwait<String>("org.bolay.camp.createPdfTable", "")
         return reply.body()
+    }
+
+    suspend fun createPersonTable(): String {
+        var reply = vertx.eventBus().requestAwait<String>("org.bolay.camp.getPersonTableData", "")
+        return reply.body()
+
     }
 }
