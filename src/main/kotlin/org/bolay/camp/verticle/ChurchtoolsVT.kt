@@ -156,11 +156,16 @@ class ChurchtoolsVT : CoroutineVerticle() {
         return campGroup
     }
 
-    suspend fun enrichGroup(pGroupId: Int, pGroups: JsonObject): Any {
-        val group = pGroups.getJsonObject(pGroupId.toString())
+
+    suspend fun enrichGroup(pGroupId: Int, pGroups: JsonObject): JsonObject {
+        val grp = pGroups
+        val group = grp.getJsonObject(pGroupId.toString())
         var users = getUsersOfGroup(login(), pGroupId)
         group.put("users", users.getValue("data"))
-        var groupValues = getAdditionalGroupValues(pGroupId).getJsonObject("data")
+        var groupValues = getAdditionalGroupValues(pGroupId).getValue("data")
+        if (groupValues !is JsonObject) {
+            groupValues = JsonObject()
+        }
         group.put("additionalGroupValues", groupValues)
         processAdditionalGroupValues(users, groupValues)
         return group
@@ -171,7 +176,10 @@ class ChurchtoolsVT : CoroutineVerticle() {
     }
 
     suspend fun processSingleAdditionalGroupValue(pUsers: JsonObject, pGroupValue: JsonObject) {
-        var userValues = pGroupValue.getJsonArray("data")
+        var userValues = pGroupValue.getValue("data")
+        if (userValues !is JsonArray) {
+            userValues = JsonArray()
+        }
         userValues.forEach {
             var user = pUsers.getJsonObject(it.toString())
         }
