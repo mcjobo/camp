@@ -31,9 +31,8 @@ class ChurchtoolsVT : CoroutineVerticle() {
         vertx.eventBus().consumer<String>("getGroups") { message ->
             println("received getGroups Message")
             GlobalScope.launch(vertx.dispatcher()) {
-                val getGroups = handleGetGroups()
-                val token = login()
-                message.reply(getGroups)
+                val getGroups = handleGetGroups(login())
+                message.reply(getGroups.toString())
             }
         }
 
@@ -42,15 +41,15 @@ class ChurchtoolsVT : CoroutineVerticle() {
             GlobalScope.launch(vertx.dispatcher()) {
                 login()
                 val cdbMasterData = cdbGetMasterData()
-                message.reply(cdbMasterData)
+                message.reply(cdbMasterData.toString())
             }
         }
         vertx.eventBus().consumer<String>("org.bolay.camp.cdbGetAdditionalGroupValues") { message ->
             println("received getUsersrOfGroup Message")
             GlobalScope.launch(vertx.dispatcher()) {
                 login()
-                val groupValues = getAdditionalGroupValues()
-                message.reply(groupValues)
+                val groupValues = getAdditionalGroupValues(129)
+                message.reply(groupValues.toString())
             }
         }
         vertx.eventBus().consumer<String>("org.bolay.camp.cdbGetUsersOfGroup") { message ->
@@ -58,7 +57,7 @@ class ChurchtoolsVT : CoroutineVerticle() {
             GlobalScope.launch(vertx.dispatcher()) {
 
                 val usersOfGroup = getUsersOfGroup(login(), 129)
-                message.reply(usersOfGroup)
+                message.reply(usersOfGroup.toString())
             }
         }
         vertx.eventBus().consumer<String>("org.bolay.camp.getPersonTableData") { message ->
@@ -72,15 +71,15 @@ class ChurchtoolsVT : CoroutineVerticle() {
 
     }
 
-    suspend fun handleGetGroups(): String {
+    suspend fun handleGetGroups(pToken: String): JsonObject {
 
         var response = client.get("/api/groups")
                 .putHeader("content-type", "application/json")
-                .addQueryParam("login_token", "***")
+                .addQueryParam("login_token", pToken)
                 .addQueryParam("limit", "100")
                 .sendAwait()
         println(response.body().toString())
-        return response.body().toString()
+        return response.body().toJsonObject()
     }
 
     suspend fun login(): String {
@@ -116,7 +115,7 @@ class ChurchtoolsVT : CoroutineVerticle() {
     }
 
     suspend fun getUsersOfGroup(pToken: String, pGroupId: Int): JsonObject {
-        var response = client.get("/api/groups/" + pGroupId + "/members")
+        var response = session.get("/api/groups/" + pGroupId + "/members")
                 .putHeader("content-type", "application/json")
                 .addQueryParam("login_token", pToken)
                 .addQueryParam("limit", "100")
@@ -125,14 +124,15 @@ class ChurchtoolsVT : CoroutineVerticle() {
         return response.body().toJsonObject()
     }
 
-    suspend fun getAdditionalGroupValues(): String {
+    suspend fun getAdditionalGroupValues(pGroupId: Int): JsonObject {
         var response = session.post("/index.php?q=churchdb/ajax")
                 .putHeader("content-type", "application/x-www-form-urlencoded")
                 .putHeader("Accept", "application/json")
                 .addQueryParam("func", "getAdditionalGroupFields")
+                .addQueryParam("g_id", pGroupId.toString())
                 .sendAwait()
         println(response.body().toString())
-        return response.body().toString()
+        return response.body().toJsonObject()
     }
 
     suspend fun collectDataPersonList(pGroupId: Int): JsonObject {
@@ -141,10 +141,10 @@ class ChurchtoolsVT : CoroutineVerticle() {
         var campGroup = groups.getJsonObject(pGroupId.toString())
         var childGroupIds = campGroup.getJsonObject("childs")
 
+
         var childGroups = JsonArray()
         childGroupIds.forEach {
-            val group = groups.getJsonObject(it.key)
-            var users = getUsersOfGroup(login(), it.key.toInt())
+            var group = enrichGroup(it.key.toInt(), groups)
             childGroups.add(group)
         }
         campGroup.put("childGoups", childGroups)
@@ -154,5 +154,28 @@ class ChurchtoolsVT : CoroutineVerticle() {
         ++i
 
         return campGroup
+    }
+
+    suspend fun enrichGroup(pGroupId: Int, pGroups: JsonObject): Any {
+        val group = pGroups.getJsonObject(pGroupId.toString())
+        var users = getUsersOfGroup(login(), pGroupId)
+        group.put("users", users.getValue("data"))
+        var groupValues = getAdditionalGroupValues(pGroupId).getJsonObject("data")
+        group.put("additionalGroupValues", groupValues)
+        processAdditionalGroupValues(users, groupValues)
+        return group
+    }
+
+    suspend fun processAdditionalGroupValues(pUsers: JsonObject, pGroupValues: JsonObject) {
+        pGroupValues.forEach { processSingleAdditionalGroupValue(pUsers, it.value as JsonObject) }
+    }
+
+    suspend fun processSingleAdditionalGroupValue(pUsers: JsonObject, pGroupValue: JsonObject) {
+        var userValues = pGroupValue.getJsonArray("data")
+        userValues.forEach {
+            var user = pUsers.getJsonObject(it.toString())
+        }
+        var i = 0
+        ++i
     }
 }
