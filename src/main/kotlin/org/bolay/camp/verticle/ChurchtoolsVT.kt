@@ -160,14 +160,19 @@ class ChurchtoolsVT : CoroutineVerticle() {
     suspend fun enrichGroup(pGroupId: Int, pGroups: JsonObject): JsonObject {
         val grp = pGroups
         val group = grp.getJsonObject(pGroupId.toString())
-        var users = getUsersOfGroup(login(), pGroupId)
-        group.put("users", users.getValue("data"))
+        var users = getUsersOfGroup(login(), pGroupId).getJsonArray("data")
+        var userObject = JsonObject()
+        users.forEach {
+            userObject.put((it as JsonObject).getInteger("personId").toString(), it)
+        }
+
+        group.put("users", users)
         var groupValues = getAdditionalGroupValues(pGroupId).getValue("data")
         if (groupValues !is JsonObject) {
             groupValues = JsonObject()
         }
         group.put("additionalGroupValues", groupValues)
-        processAdditionalGroupValues(users, groupValues)
+        processAdditionalGroupValues(userObject, groupValues)
         return group
     }
 
@@ -177,13 +182,21 @@ class ChurchtoolsVT : CoroutineVerticle() {
 
     suspend fun processSingleAdditionalGroupValue(pUsers: JsonObject, pGroupValue: JsonObject) {
         var userValues = pGroupValue.getValue("data")
-        if (userValues !is JsonArray) {
-            userValues = JsonArray()
+        if (userValues !is JsonObject) {
+            userValues = JsonObject()
         }
         userValues.forEach {
-            var user = pUsers.getJsonObject(it.toString())
+            var user = pUsers.getJsonObject(it.key)
+            if (user.getValue("groupValues") == null) {
+                user.put("groupValues", JsonArray())
+            }
+            var grpValue = pGroupValue.copy()
+            grpValue.put("value", (it.value as JsonObject).getString("value"))
+            user.getJsonArray("groupValues").add(grpValue)
+            var i = 0
+            ++i
         }
-        var i = 0
-        ++i
+
     }
+    
 }
