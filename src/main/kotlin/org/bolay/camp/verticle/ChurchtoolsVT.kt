@@ -147,7 +147,7 @@ class ChurchtoolsVT : CoroutineVerticle() {
             var group = enrichGroup(it.key.toInt(), groups)
             childGroups.add(group)
         }
-        campGroup.put("childGoups", childGroups)
+        campGroup.put("childGroups", childGroups)
 
 
         var i = 0
@@ -160,30 +160,43 @@ class ChurchtoolsVT : CoroutineVerticle() {
     suspend fun enrichGroup(pGroupId: Int, pGroups: JsonObject): JsonObject {
         val grp = pGroups
         val group = grp.getJsonObject(pGroupId.toString())
-        var users = getUsersOfGroup(login(), pGroupId)
-        group.put("users", users.getValue("data"))
+        var users = getUsersOfGroup(login(), pGroupId).getValue("data") as JsonArray
+        var userObj = JsonObject()
+        users.forEach {
+            userObj.put((it as JsonObject).getInteger("personId").toString(), it)
+        }
+
+        group.put("users", userObj)
         var groupValues = getAdditionalGroupValues(pGroupId).getValue("data")
         if (groupValues !is JsonObject) {
             groupValues = JsonObject()
         }
         group.put("additionalGroupValues", groupValues)
-        processAdditionalGroupValues(users, groupValues)
+        processAdditionalGroupValues(userObj, groupValues)
         return group
     }
 
     suspend fun processAdditionalGroupValues(pUsers: JsonObject, pGroupValues: JsonObject) {
-        pGroupValues.forEach { processSingleAdditionalGroupValue(pUsers, it.value as JsonObject) }
+        pGroupValues.forEach {
+            processSingleAdditionalGroupValue(pUsers, it.value as JsonObject)
+        }
     }
 
     suspend fun processSingleAdditionalGroupValue(pUsers: JsonObject, pGroupValue: JsonObject) {
         var userValues = pGroupValue.getValue("data")
-        if (userValues !is JsonArray) {
-            userValues = JsonArray()
+        if (userValues !is JsonObject) {
+            userValues = JsonObject()
         }
         userValues.forEach {
-            var user = pUsers.getJsonObject(it.toString())
+            var user = userValues.getJsonObject(it.key)
+            var grpValue = pGroupValue.copy()
+            grpValue.put("value", (it.value as JsonObject).getString("value"))
+            var userGrpValues = pUsers.getJsonObject(it.key).getJsonObject("groupValues")
+            if (userGrpValues !is JsonObject) {
+                userGrpValues = JsonObject()
+                pUsers.getJsonObject(it.key).put("groupValues", userGrpValues)
+            }
+            userGrpValues.put(grpValue.getString("fieldname"), grpValue)
         }
-        var i = 0
-        ++i
     }
 }
