@@ -79,7 +79,7 @@ class RestVerticle : CoroutineVerticle() {
     }
 
     suspend fun createPersonTable(): String {
-        var reply = vertx.eventBus().requestAwait<String>("org.bolay.camp.getPersonTableData", "")
+        var reply = vertx.eventBus().requestAwait<String>("org.bolay.camp.createPersonTable", "")
         return reply.body()
 
     }

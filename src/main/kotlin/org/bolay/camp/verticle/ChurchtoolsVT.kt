@@ -14,12 +14,12 @@ import kotlinx.coroutines.launch
 
 
 class ChurchtoolsVT : CoroutineVerticle() {
-    var options = WebClientOptions(defaultHost = "cz-rostock.church.tools", defaultPort = 443, ssl = true, logActivity = true)
-    val client = create(Vertx.vertx(), options)
-    val session = WebClientSession.create(client)
-    val login = System.getProperty("ct.login")
-    val passwd = System.getProperty("ct.passwd")
-    val campGroupId = 233
+    private var options = WebClientOptions(defaultHost = "cz-rostock.church.tools", defaultPort = 443, ssl = true, logActivity = true)
+    private val client = create(Vertx.vertx(), options)
+    private val session = WebClientSession.create(client)
+    private val login = System.getProperty("ct.login")
+    private val passwd = System.getProperty("ct.passwd")
+    private val campGroupId = 233
 
     override suspend fun start() {
         super.start()
@@ -71,9 +71,9 @@ class ChurchtoolsVT : CoroutineVerticle() {
 
     }
 
-    suspend fun handleGetGroups(pToken: String): JsonObject {
+    private suspend fun handleGetGroups(pToken: String): JsonObject {
 
-        var response = client.get("/api/groups")
+        val response = client.get("/api/groups")
                 .putHeader("content-type", "application/json")
                 .addQueryParam("login_token", pToken)
                 .addQueryParam("limit", "100")
@@ -86,26 +86,26 @@ class ChurchtoolsVT : CoroutineVerticle() {
         return login(login, passwd)
     }
 
-    suspend fun login(username: String, password: String): String {
-        var responseLogin = session.post("/api/login")
+    private suspend fun login(username: String, password: String): String {
+        val responseLogin = session.post("/api/login")
                 .putHeader("content-type", "application/json")
                 .addQueryParam("username", username)
                 .addQueryParam("password", password)
                 .sendAwait()
-        var res = responseLogin.body().toJsonObject()
+        val res = responseLogin.body().toJsonObject()
         println(responseLogin.body().toJson())
-        var personId = res.getJsonObject("data").getInteger("personId")
-        var uri = "/api/persons/" + personId + "/logintoken"
+        val personId = res.getJsonObject("data").getInteger("personId")
+        val uri = "/api/persons/" + personId + "/logintoken"
 
-        var responseToken = session.get(uri)
+        val responseToken = session.get(uri)
                 .putHeader("content-type", "application/json")
                 .sendAwait()
         println(responseToken)
         return responseToken.body().toJsonObject().getString("data")
     }
 
-    suspend fun cdbGetMasterData(): JsonObject {
-        var response = session.post("/index.php?q=churchdb/ajax")
+    private suspend fun cdbGetMasterData(): JsonObject {
+        val response = session.post("/index.php?q=churchdb/ajax")
                 .putHeader("content-type", "application/x-www-form-urlencoded")
                 .putHeader("Accept", "application/json")
                 .addQueryParam("func", "getMasterData")
@@ -114,8 +114,8 @@ class ChurchtoolsVT : CoroutineVerticle() {
         return response.body().toJsonObject()
     }
 
-    suspend fun getUsersOfGroup(pToken: String, pGroupId: Int): JsonObject {
-        var response = session.get("/api/groups/" + pGroupId + "/members")
+    private suspend fun getUsersOfGroup(pToken: String, pGroupId: Int): JsonObject {
+        val response = session.get("/api/groups/" + pGroupId + "/members")
                 .putHeader("content-type", "application/json")
                 .addQueryParam("login_token", pToken)
                 .addQueryParam("limit", "100")
@@ -124,8 +124,8 @@ class ChurchtoolsVT : CoroutineVerticle() {
         return response.body().toJsonObject()
     }
 
-    suspend fun getAdditionalGroupValues(pGroupId: Int): JsonObject {
-        var response = session.post("/index.php?q=churchdb/ajax")
+    private suspend fun getAdditionalGroupValues(pGroupId: Int): JsonObject {
+        val response = session.post("/index.php?q=churchdb/ajax")
                 .putHeader("content-type", "application/x-www-form-urlencoded")
                 .putHeader("Accept", "application/json")
                 .addQueryParam("func", "getAdditionalGroupFields")
@@ -135,61 +135,71 @@ class ChurchtoolsVT : CoroutineVerticle() {
         return response.body().toJsonObject()
     }
 
-    suspend fun collectDataPersonList(pGroupId: Int): JsonObject {
-        var masterData = cdbGetMasterData()
-        var groups = masterData.getJsonObject("data").getJsonObject("groups")
-        var campGroup = groups.getJsonObject(pGroupId.toString())
-        var childGroupIds = campGroup.getJsonObject("childs")
+    suspend fun getAllPersondata(): JsonObject {
+        val response = session.post("/index.php?q=churchdb/ajax")
+                .putHeader("content-type", "application/x-www-form-urlencoded")
+                .putHeader("Accept", "application/json")
+                .addQueryParam("func", "getAllPersonData")
+                .sendAwait()
+        println(response.body().toString())
+        return response.body().toJsonObject()
+    }
+
+    private suspend fun collectDataPersonList(pGroupId: Int): JsonObject {
+        val masterData = cdbGetMasterData()
+        val groups = masterData.getJsonObject("data").getJsonObject("groups")
+        val campGroup = groups.getJsonObject(pGroupId.toString())
+        val childGroupIds = campGroup.getJsonObject("childs")
 
 
-        var childGroups = JsonArray()
+        val childGroups = JsonArray()
         childGroupIds.forEach {
-            var group = enrichGroup(it.key.toInt(), groups)
+            val group = enrichGroup(it.key.toInt(), groups)
             childGroups.add(group)
         }
         campGroup.put("childGroups", childGroups)
-
-
-        var i = 0
-        ++i
-
         return campGroup
     }
 
 
-    suspend fun enrichGroup(pGroupId: Int, pGroups: JsonObject): JsonObject {
-        val grp = pGroups
-        val group = grp.getJsonObject(pGroupId.toString())
-        var users = getUsersOfGroup(login(), pGroupId).getValue("data") as JsonArray
-        var userObj = JsonObject()
-        users.forEach {
-            userObj.put((it as JsonObject).getInteger("personId").toString(), it)
+    private suspend fun enrichGroup(pGroupId: Int, pGroups: JsonObject): JsonObject {
+        val group = pGroups.getJsonObject(pGroupId.toString())
+        val allUsers = getAllPersondata().getJsonObject("data")
+        val usersJsonObj = JsonObject()
+        allUsers.forEach {
+            it.value as JsonObject
+        }
+        val filtered = allUsers.filter { (key, value) ->
+            (value as JsonObject).getJsonObject("groupmembers", JsonObject()).containsKey(group.getString("id"))
+        }
+        filtered.forEach {
+            (it.value as JsonObject).put("groupmember", (it.value as JsonObject).getJsonObject("groupmembers").getJsonObject(group.getString("id")))
+            usersJsonObj.put(it.key, it.value as JsonObject)
         }
 
-        group.put("users", userObj)
+        group.put("users", filtered)
         var groupValues = getAdditionalGroupValues(pGroupId).getValue("data")
         if (groupValues !is JsonObject) {
             groupValues = JsonObject()
         }
         group.put("additionalGroupValues", groupValues)
-        processAdditionalGroupValues(userObj, groupValues)
+        processAdditionalGroupValues(usersJsonObj, groupValues)
         return group
     }
 
-    suspend fun processAdditionalGroupValues(pUsers: JsonObject, pGroupValues: JsonObject) {
+    private fun processAdditionalGroupValues(pUsers: JsonObject, pGroupValues: JsonObject) {
         pGroupValues.forEach {
             processSingleAdditionalGroupValue(pUsers, it.value as JsonObject)
         }
     }
 
-    suspend fun processSingleAdditionalGroupValue(pUsers: JsonObject, pGroupValue: JsonObject) {
+    private fun processSingleAdditionalGroupValue(pUsers: JsonObject, pGroupValue: JsonObject) {
         var userValues = pGroupValue.getValue("data")
         if (userValues !is JsonObject) {
             userValues = JsonObject()
         }
         userValues.forEach {
-            var user = userValues.getJsonObject(it.key)
-            var grpValue = pGroupValue.copy()
+            val grpValue = pGroupValue.copy()
             grpValue.put("value", (it.value as JsonObject).getString("value"))
             var userGrpValues = pUsers.getJsonObject(it.key).getJsonObject("groupValues")
             if (userGrpValues !is JsonObject) {
