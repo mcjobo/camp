@@ -166,14 +166,11 @@ class ChurchtoolsVT : CoroutineVerticle() {
         val group = pGroups.getJsonObject(pGroupId.toString())
         val allUsers = getAllPersondata().getJsonObject("data")
         val usersJsonObj = JsonObject()
-        allUsers.forEach {
-            it.value as JsonObject
-        }
         val filtered = allUsers.filter { (key, value) ->
             (value as JsonObject).getJsonObject("groupmembers", JsonObject()).containsKey(group.getString("id"))
         }
         filtered.forEach {
-            (it.value as JsonObject).put("groupmember", (it.value as JsonObject).getJsonObject("groupmembers").getJsonObject(group.getString("id")))
+            (it.value as JsonObject).put("groupAttributes", (it.value as JsonObject).getJsonObject("groupmembers").getJsonObject(group.getString("id")))
             usersJsonObj.put(it.key, it.value as JsonObject)
         }
 

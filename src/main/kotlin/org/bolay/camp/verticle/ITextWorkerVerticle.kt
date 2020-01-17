@@ -59,14 +59,39 @@ class ITextWorkerVerticle : CoroutineVerticle() {
             var cell1 = Cell(1, 3)
             cell1.add(Paragraph(group.getString("bezeichnung")))
             table.addHeaderCell(cell1)
+
+            mapPersonsToTeams(group)
         }
 
         pDocument.add(table)
     }
 
 
-    suspend fun mapPersonsToTeams(pGroup: JsonObject) {
-        
+    suspend fun mapPersonsToTeams(pGroup: JsonObject): JsonObject {
+        // the id of a teamleader (Mitarbeiter) in a team (grouptype kleingruppe)
+        val teamLeaderId = "12"
+
+        var teams = JsonObject()
+        val userList = pGroup.getJsonArray("users")
+        userList.forEach {
+            var user = it as JsonObject
+            (it as JsonObject).forEach {
+                val i = 0
+                user = it.value as JsonObject
+            }
+
+            if (user.getJsonObject("groupValues") != null && user.getJsonObject("groupValues").getJsonObject("Team") != null) {
+                val teamName = user.getJsonObject("groupValues").getJsonObject("Team").getString("value")
+                if (teamName != null && !teams.containsKey(teamName)) {
+                    teams.put(teamName, JsonObject().put("name", teamName).put("members", JsonObject()))
+                }
+                teams.getJsonObject(teamName).getJsonObject("members").put(user.getString("p_id"), user)
+                if (user.getJsonObject("groupAttributes").getString("groupmemberstatus_id") == teamLeaderId) {
+                    teams.getJsonObject(teamName).put("leader", user)
+                }
+            }
+        }
+        return teams
     }
 
     suspend fun createPdfTable() {
