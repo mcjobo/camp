@@ -56,6 +56,8 @@ class RestVerticle : CoroutineVerticle() {
 
 
         server.requestHandler(router).listen(8080)
+
+        val personTable = createPersonTable()
     }
 
 
