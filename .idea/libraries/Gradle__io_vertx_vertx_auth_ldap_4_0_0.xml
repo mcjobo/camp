@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: io.vertx:vertx-auth-ldap:4.0.0">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.vertx/vertx-auth-ldap/4.0.0/61a6d798d266c88790d888c4ef09620783c0cb71/vertx-auth-ldap-4.0.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.vertx/vertx-auth-ldap/4.0.0/63a1163949dbe94c087fcc39261e6e12f085daf8/vertx-auth-ldap-4.0.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

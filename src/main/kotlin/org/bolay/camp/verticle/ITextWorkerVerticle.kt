@@ -48,7 +48,7 @@ class ITextWorkerVerticle : CoroutineVerticle() {
     }
 
     suspend fun createPersonTable(pData: JsonObject) {
-        val writer = PdfWriter("webroot/listen/personTable.pdf")
+        val writer = PdfWriter("webroot/dist/listen/personTable.pdf")
         val pdf = PdfDocument(writer)
         val document = Document(pdf)
 

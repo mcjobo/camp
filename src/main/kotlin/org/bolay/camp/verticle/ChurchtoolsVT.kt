@@ -3,23 +3,28 @@ package org.bolay.camp.verticle
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
-import io.vertx.ext.web.client.WebClient.create
+import io.vertx.ext.web.client.WebClient
+import io.vertx.ext.web.client.WebClientOptions
 import io.vertx.ext.web.client.WebClientSession
 import io.vertx.kotlin.coroutines.CoroutineVerticle
 import io.vertx.kotlin.coroutines.dispatcher
-import io.vertx.kotlin.ext.web.client.WebClientOptions
 import io.vertx.kotlin.ext.web.client.sendAwait
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 
-class ChurchtoolsVT : CoroutineVerticle() {
-    private var options = WebClientOptions(defaultHost = "cz-rostock.church.tools", defaultPort = 443, ssl = true, logActivity = true)
-    private val client = create(Vertx.vertx(), options)
-    private val session = WebClientSession.create(client)
+open class ChurchtoolsVT : CoroutineVerticle() {
+    protected var options = WebClientOptions(JsonObject("""{"defaultHost": "cz-rostock.church.tools", "defaultPort": 443, "ssl": true, "logActivity": true}""".trimIndent()))
+    protected val client = WebClient.create(Vertx.vertx(), options)
+    protected val session = WebClientSession.create(client)
+    protected var csrfToken = ""
     private val login = System.getProperty("ct.login")
     private val passwd = System.getProperty("ct.passwd")
     private val campGroupId = 233
+
+    fun  JsonObject.getString(key: String, default: String): String {
+        return this.getString(key)?.toString() ?: default
+    }
 
     override suspend fun start() {
         super.start()
@@ -101,6 +106,12 @@ class ChurchtoolsVT : CoroutineVerticle() {
                 .putHeader("content-type", "application/json")
                 .sendAwait()
         println(responseToken)
+        val csrfTokenResp = session.get("/api/csrftoken")
+                .putHeader("content-type", "application/json")
+                .sendAwait()
+        csrfToken = csrfTokenResp.bodyAsJsonObject().getString("data")
+
+
         return responseToken.body().toJsonObject().getString("data")
     }
 
@@ -108,6 +119,7 @@ class ChurchtoolsVT : CoroutineVerticle() {
         val response = session.post("/index.php?q=churchdb/ajax")
                 .putHeader("content-type", "application/x-www-form-urlencoded")
                 .putHeader("Accept", "application/json")
+                .putHeader("csrf-token", csrfToken)
                 .addQueryParam("func", "getMasterData")
                 .sendAwait()
         println(response.body().toString())
@@ -128,6 +140,7 @@ class ChurchtoolsVT : CoroutineVerticle() {
         val response = session.post("/index.php?q=churchdb/ajax")
                 .putHeader("content-type", "application/x-www-form-urlencoded")
                 .putHeader("Accept", "application/json")
+                .putHeader("csrf-token", csrfToken)
                 .addQueryParam("func", "getAdditionalGroupFields")
                 .addQueryParam("g_id", pGroupId.toString())
                 .sendAwait()
@@ -138,6 +151,7 @@ class ChurchtoolsVT : CoroutineVerticle() {
     suspend fun getAllPersondata(): JsonObject {
         val response = session.post("/index.php?q=churchdb/ajax")
                 .putHeader("content-type", "application/x-www-form-urlencoded")
+                .putHeader("csrf-token", csrfToken)
                 .putHeader("Accept", "application/json")
                 .addQueryParam("func", "getAllPersonData")
                 .sendAwait()

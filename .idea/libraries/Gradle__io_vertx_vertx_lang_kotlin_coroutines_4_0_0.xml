@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: io.vertx:vertx-lang-kotlin-coroutines:4.0.0">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.vertx/vertx-lang-kotlin-coroutines/4.0.0/fddd2bfaf22f4da503efe30ef0ce5c3ad735d7c0/vertx-lang-kotlin-coroutines-4.0.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.vertx/vertx-lang-kotlin-coroutines/4.0.0/68b7ad04104b326f8ce6125abcc67f82d98e674/vertx-lang-kotlin-coroutines-4.0.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
