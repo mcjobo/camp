@@ -1,6 +1,6 @@
 FROM openjdk:8-jre-alpine
 
-ENV VERTICLE_FILE rr-camp-0.1-SNAPSHOT-all.jar
+ENV VERTICLE_FILE camp-0.1-SNAPSHOT-all.jar
 
 # Set the location of the verticles
 ENV VERTICLE_HOME /usr/verticles
