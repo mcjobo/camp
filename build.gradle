@@ -1,11 +1,16 @@
 plugins {
     id "org.jetbrains.kotlin.jvm" version "1.4.20"
-    id 'com.github.johnrengelman.shadow' version '5.2.0'
+    id 'com.github.johnrengelman.shadow' version '6.1.0'
 }
+
+group 'rr-camp'
+version '0.1-SNAPSHOT'
+
 repositories {
     mavenCentral()
 }
 dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.4.20"
     compile 'io.vertx:vertx-core:4.0.0'
     compile 'io.vertx:vertx-web:4.0.0'
@@ -38,6 +43,6 @@ compileTestKotlin {
 }
 jar {
     manifest {
-        attributes 'Main-Class': 'org.bolay.duplicati.monitoring.verticle.StartupKt'
+        attributes 'Main-Class': 'org.bolay.camp.verticle.MainVT'
     }
 }
