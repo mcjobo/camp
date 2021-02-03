@@ -1,5 +1,6 @@
 plugins {
     id "org.jetbrains.kotlin.jvm" version "1.4.20"
+    id 'com.github.johnrengelman.shadow' version '5.2.0'
 }
 repositories {
     mavenCentral()
@@ -35,4 +36,8 @@ compileKotlin {
 compileTestKotlin {
     kotlinOptions.jvmTarget = "11"
 }
-
+jar {
+    manifest {
+        attributes 'Main-Class': 'org.bolay.duplicati.monitoring.verticle.StartupKt'
+    }
+}
